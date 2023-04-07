@@ -1,9 +1,10 @@
-import { Notice, Plugin, FileManager, TAbstractFile, TFile } from 'obsidian';
+import { Notice, Plugin, TAbstractFile, TFile } from 'obsidian';
 import { PluginSettings, DEFAULT_SETTINGS } from 'src/settings/settings';
+import { GhostPostMetadata } from 'src/api/models';
+import { uploadPost } from 'src/api/api';
 
 export default class GhostIntegrationPlugin extends Plugin {
   settings: PluginSettings;
-  fileManager = new FileManager();
 
   async onload() {
     await this.loadSettings();
@@ -11,8 +12,8 @@ export default class GhostIntegrationPlugin extends Plugin {
     this.registerEvent(
       this.app.workspace.on("file-menu", (menu, file: TAbstractFile) => {
         const actualFile = file as TFile;
-        if(!actualFile) {
-          new Notify("unable to read file");
+        if (!actualFile) {
+          new Notice("unable to read file");
           return;
         }
 
@@ -20,23 +21,40 @@ export default class GhostIntegrationPlugin extends Plugin {
           item
             .setTitle("Publish to Ghost")
             .setIcon("ghost")
-            .onClick(() => this.tryToPublishToGhost(actualFile));
+            .onClick(async () => {
+              //todo: loading
+              try {
+                const metadata = await this.parseFileMetadata(actualFile);
+                if(metadata) {
+                  await this.uploadPostInternal(metadata, actualFile);
+                } else {
+                  throw new Error("unexpected error reading metadata. make sure you have the title, tags, and status (draft|published) defined");
+                }
+              } catch(e) {
+                new Notice(e.message);
+              }
+            });
         });
       })
     );
   }
 
-  tryToPublishToGhost(file: TFile) {
-    try {
-      this.fileManager.processFrontMatter(file, (data: any) => {
-        console.log(`----- front matter processed:`);
-        console.dir(data);
+  async parseFileMetadata(file: TFile): Promise<GhostPostMetadata> {
+    const fileManager = this.app.fileManager;
+    return new Promise((accept, reject) => {
+      fileManager.processFrontMatter(file, async (data: any) => {
+        const metaData = data as GhostPostMetadata;
+        if (!metaData) {
+          reject("Metdata incomplete. Required: title, tags (comma separated list), status (published|draft)");
+        } else {
+          accept(metaData);
+        }
       });
-    } catch(e) {
-      new Notify("unexpected problem processing meta data for file");
-      console.log(`***** error 1:`);
-      console.dir(e)
-    }
+    });
+  }
+
+  async uploadPostInternal(metadata: GhostPostMetadata, file: TFile) {
+    uploadPost(metadata, file, this.settings);
   }
 
   onunload() { }
