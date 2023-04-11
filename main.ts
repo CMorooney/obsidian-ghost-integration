@@ -2,6 +2,7 @@ import { Notice, Plugin, TAbstractFile, TFile } from 'obsidian';
 import { PluginSettings, DEFAULT_SETTINGS } from 'src/settings/settings';
 import { GhostPostMetadata } from 'src/api/models';
 import { uploadPost } from 'src/api/api';
+const MarkdownIt = require("markdown-it");
 
 export default class GhostIntegrationPlugin extends Plugin {
   settings: PluginSettings;
@@ -54,7 +55,14 @@ export default class GhostIntegrationPlugin extends Plugin {
   }
 
   async uploadPostInternal(metadata: GhostPostMetadata, file: TFile) {
-    uploadPost(metadata, file, this.settings);
+    //todo:
+    console.dir(file);
+    const x = await this.app.vault.adapter.read(file.path);
+    const md = new MarkdownIt();
+    console.dir(x);
+    console.dir(md.render(x));
+
+    // await uploadPost(metadata, html, this.settings);
   }
 
   onunload() { }
