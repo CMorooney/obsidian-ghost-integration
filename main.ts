@@ -23,7 +23,7 @@ export default class GhostIntegrationPlugin extends Plugin {
             .setTitle("Publish to Ghost")
             .setIcon("ghost")
             .onClick(async () => {
-              //todo: loading
+              // todo: loading
               try {
                 const metadata = await this.parseFileMetadata(actualFile);
                 if (metadata) {
@@ -33,6 +33,8 @@ export default class GhostIntegrationPlugin extends Plugin {
                 }
               } catch (e) {
                 new Notice(e.message);
+              } finally {
+                // todo: loading
               }
             });
         });
@@ -44,6 +46,8 @@ export default class GhostIntegrationPlugin extends Plugin {
     const fileManager = this.app.fileManager;
     return new Promise((accept, reject) => {
       fileManager.processFrontMatter(file, async (data: any) => {
+        console.log(`FrontMatter data:`);
+        console.dir(data);
         const metaData = data as GhostPostMetadata;
         if (!metaData) {
           reject("Metdata incomplete. Required: title, tags (comma separated list), status (published|draft)");
@@ -55,12 +59,17 @@ export default class GhostIntegrationPlugin extends Plugin {
   }
 
   async uploadPostInternal(metadata: GhostPostMetadata, file: TFile) {
-    //todo:
-    console.dir(file);
-    const x = await this.app.vault.adapter.read(file.path);
+    // todo:: send it!
+    // todo: api shold return post object, write to file metadata (we should track id for updates)
+
+    let fileText = await this.app.vault.adapter.read(file.path);
+    // this regex removes any yaml blocks (metadata at top of post)
+    fileText = fileText.replace(/^(?:---)\n(?:[\S\s\:])*(?:---)\n/g, '');
     const md = new MarkdownIt();
-    console.dir(x);
-    console.dir(md.render(x));
+    const fileTextAsHtml = md.render(fileText);
+    console.log(`File as HTML`);
+    console.dir(fileTextAsHtml);
+    console.log(`------------------------------`);
 
     // await uploadPost(metadata, html, this.settings);
   }
