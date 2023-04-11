@@ -26,12 +26,12 @@ export default class GhostIntegrationPlugin extends Plugin {
               //todo: loading
               try {
                 const metadata = await this.parseFileMetadata(actualFile);
-                if(metadata) {
+                if (metadata) {
                   await this.uploadPostInternal(metadata, actualFile);
                 } else {
                   throw new Error("unexpected error reading metadata. make sure you have the title, tags, and status (draft|published) defined");
                 }
-              } catch(e) {
+              } catch (e) {
                 new Notice(e.message);
               }
             });
