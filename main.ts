@@ -1,5 +1,5 @@
 import { Notice, Plugin, TAbstractFile, TFile } from 'obsidian';
-import { PluginSettings, DEFAULT_SETTINGS } from 'src/settings/settings';
+import { PluginSettings, SettingsTab, DEFAULT_SETTINGS } from 'src/settings/settings';
 import { GhostPostMetadata } from 'src/api/models';
 import { uploadPost } from 'src/api/api';
 const MarkdownIt = require("markdown-it");
@@ -9,6 +9,8 @@ export default class GhostIntegrationPlugin extends Plugin {
 
   async onload() {
     await this.loadSettings();
+
+    this.addSettingTab(new SettingsTab(this.app, this));
 
     this.registerEvent(
       this.app.workspace.on("file-menu", (menu, file: TAbstractFile) => {
@@ -70,6 +72,9 @@ export default class GhostIntegrationPlugin extends Plugin {
     console.log(`File as HTML`);
     console.dir(fileTextAsHtml);
     console.log(`------------------------------`);
+    var post = await uploadPost(metadata, fileTextAsHtml, this.settings);
+    console.log(`~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`);
+    console.dir(post);
 
     // await uploadPost(metadata, html, this.settings);
   }
